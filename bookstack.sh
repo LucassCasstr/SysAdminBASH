@@ -44,13 +44,29 @@ GRANT ALL PRIVILEGES ON bookstackdb.* TO 'bookstackuser'@'localhost' IDENTIFIED 
 FLUSH PRIVILEGES;
 quit"
 
-# Set root password
+# Variável para armazenar a senha
+DB_ROOT=""
+echo "GERANDO SENHA DO BANCO MYSQL!"
+read -p "Você deseja uma senha aleatória gerada automaticamente (A) ou uma senha personalizada (P)? [A/P]: " choice
 
-DB_ROOT=$(cat /dev/urandom | tr -cd 'A-Za-z0-9' | head -c 14)
-echo "MariaDB root:${DB_ROOT}" >> $TMPROOTPWD && cat $TMPROOTPWD
+if [[ "$choice" == "A" || "$choice" == "a" ]]; then
+    # Gerar uma senha aleatória
+    DB_ROOT=$(cat /dev/urandom | tr -cd 'A-Za-z0-9' | head -c 14)
+    echo "MariaDB root:${DB_ROOT}"
+
+elif [[ "$choice" == "P" || "$choice" == "p" ]]; then
+
+    read -s -p "Digite a senha personalizada para o usuário root do MariaDB: " custom_password
+
+    DB_ROOT="$custom_password"
+else
+    echo "Escolha inválida. Saindo do script."
+    exit 1
+fi
 mysql -e "SET PASSWORD FOR root@localhost = PASSWORD('${DB_ROOT}');FLUSH PRIVILEGES;"
-
-
+if [[ "$choice" == "A" || "$choice" == "a" ]]; then
+    echo "MariaDB root:${DB_ROOT}" > /tmp/db_root_password
+fi
 ### CONFIGURANDO PHP-FPM ###############################################################################################################
 echo -e "\n${jaune}PHP-FPM configuration ...${rescolor}" && sleep 1
 fpmconf=/etc/php-fpm.d/www.conf
